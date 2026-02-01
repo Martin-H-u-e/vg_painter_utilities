@@ -30,7 +30,7 @@ class LayerManager:
         
         if project.is_open():
             self._current_stack = textureset.get_active_stack()
-            self._layer_selection = layerstack.get_selected_nodes(self._current_stack)            
+            self._layer_selection = layerstack.get_selected_nodes(self._current_stack)
 
     @property
     def current_stack(self):
@@ -226,6 +226,17 @@ class MaskManager:
             for pos in insertion_positions:
                 layerstack.insert_generator_effect(pos, generator_resource.identifier())
 
+    def add_black_mask_with_color_select(self):
+        """Adds a black mask with a color selection layer to the currently selected layer.
+        """
+        current_layer = layerstack.get_selected_nodes(self.layer_manager.current_stack)
+        self.add_mask()
+        
+        inside_mask = layerstack.InsertPosition.inside_node(current_layer[0], layerstack.NodeStack.Mask)
+        my_color_selection_effect_mask = layerstack.insert_color_selection_effect(inside_mask)
+        
+        # my_color_selection_effect_mask.set_color(...
+
     def add_mask_with_fill(self):
         """Adds a black mask with a fill layer to the currently selected layer.
         """
@@ -238,8 +249,6 @@ class MaskManager:
         pure_white = colormanagement.Color(1.0, 1.0, 1.0)
         my_fill_effect_mask.set_source(channeltype=None, source=pure_white)
         
-
-
 
 
 

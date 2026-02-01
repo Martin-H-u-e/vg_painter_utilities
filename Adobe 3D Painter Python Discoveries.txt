@@ -1,0 +1,111 @@
+Adobe 3D Painter Python Discoveries
+
+--- Available Attributes in Layerstack ---
+ActiveChannelsMixin
+AnchorPointEffectNode
+BlendingMode
+ChannelType
+ClassVar
+Color
+ColorSelectionBackgroundColor
+ColorSelectionEffectNode
+ColorSelectionEffectParams
+CompareMaskEffectNode
+CompareMaskEffectOperand
+CompareMaskEffectOperation
+CompareMaskEffectParams
+CylindricalProjectionParams
+Dict
+EffectNode
+Enum
+FillEffectNode
+FillLayerNode
+FillParamsEditorMixin
+FilterEffectNode
+FilteringMode
+GeneratorEffectNode
+GeometryMaskType
+GroupLayerNode
+HierarchicalNode
+InsertPosition
+InstanceLayerNode
+LayerNode
+LevelsEffectNode
+LevelsParams
+List
+MaskBackground
+Node
+NodeStack
+NodeType
+Optional
+PaintEffectNode
+PaintLayerNode
+PlanarProjectionParams
+Projection3DParams
+ProjectionCullingParams
+ProjectionMode
+ProjectionParams
+ReadOnlyUid
+ScaleMode
+ScopedModification
+SelectionType
+ShapeCropMode
+SourceEditorMixin
+SourceSubstance
+SphericalProjectionParams
+Stack
+TextureSet
+TriplanarProjectionParams
+UVProjectionParams
+UVSetToUVSetProjectionParams
+UVTile
+UVTransformationParams
+UVWrapMode
+Union
+WarpProjectionParams
+_node_id_to_concrete_node
+_proj_mode_from_specific_params
+_proj_params_global_to_specific
+_proj_params_specific_to_global
+_substance_painter
+_to_private_color
+_to_public_color
+_utility
+annotations
+create_smart_mask
+create_smart_material
+dataclasses
+delete_node
+get_node_by_uid
+get_root_layer_nodes
+get_selected_nodes
+get_selection_type
+insert_anchor_point_effect
+insert_color_selection_effect
+insert_compare_mask_effect
+insert_fill
+insert_filter_effect
+insert_generator_effect
+insert_group
+insert_levels_effect
+insert_paint
+insert_smart_mask
+insert_smart_material
+instantiate
+levels
+set_selected_nodes
+set_selection_type
+substance_painter
+
+
+Help on function insert_color_selection_effect in module substance_painter.layerstack:
+insert_color_selection_effect(position: 'InsertPosition') -> 'ColorSelectionEffectNode'
+    Insert a color selection effect.
+    Args:
+        position(InsertPosition): The insert position must be either inside
+            a :class:`LayerNode` with :class:`NodeStack.Mask <NodeStack>`
+            or above/below an :class:`EffectNode` in the mask stack.
+    Returns:
+        ColorSelectionEffectNode: The inserted node.
+    Raises:
+        ValueError: If insertion failed due to an invalid `position`. See :class:`InsertPosition`.
