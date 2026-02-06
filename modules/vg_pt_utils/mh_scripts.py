@@ -4,11 +4,28 @@
 import string
 from substance_painter import textureset, layerstack, project, resource, logging, colormanagement
 
+"""
+[Python] --- Raw Attributes of NodeType ---
+[Python] AnchorPointEffect
+[Python] ColorSelectionEffect
+[Python] CompareMaskEffect
+[Python] FillEffect
+[Python] FillLayer
+[Python] FilterEffect
+[Python] GeneratorEffect
+[Python] GroupLayer
+[Python] InstanceLayer
+[Python] LevelsEffect
+[Python] PaintEffect
+[Python] PaintLayer
+[Python] name
+[Python] value
+"""
 
 def mh_script_test():
     try:
         # 1. Get the Active Stack (The argument you were missing)
-        # Found in vg_layerstack.py Line 36/41
+        # Found in vg_layerstack.py Line 36/41f
         stack = textureset.get_active_stack()
         
         # 2. Get the selected layer using the stack
@@ -71,6 +88,7 @@ class MaskManager_mh:
                     mask_to_add = color_map.get(mask_bkg_color, layerstack.MaskBackground.Black)
                     selectedLayer.add_mask(mask_to_add)
 
+
     def mh_add_black_mask_with_color_select(self):
         """Adds a black mask with a color selection layer to the currently selected layer.
         """
@@ -82,3 +100,83 @@ class MaskManager_mh:
         inside_mask = layerstack.InsertPosition.inside_node(current_layer[0], layerstack.NodeStack.Mask)
         my_color_selection_effect = layerstack.insert_color_selection_effect(inside_mask)
         layerstack.set_selected_nodes([my_color_selection_effect])
+
+
+    def mh_add_paint_mask_effect_v0(self):
+        """Adds a paint effect to the mask of the currently selected layer or its parent layer if an effect is selected. Adds a black mask if none exists.
+        """
+        selected_nodes = layerstack.get_selected_nodes(self.layer_manager.current_stack)
+        if not selected_nodes:
+            logging.error("No layer selected.")
+            return
+        
+        selected_node = selected_nodes[0]
+        
+        if selected_node.has_mask():
+            layer_node = selected_node
+        else:
+            # If selected is an effect (no mask), get the parent layer (effect -> mask -> layer)
+            mask_node = selected_node.get_parent()
+            layer_node = mask_node.get_parent()
+        
+        # Check if the layer has a mask; if not, add a black mask
+        if not layer_node.has_mask():
+            layer_node.add_mask(layerstack.MaskBackground.Black)
+        
+        inside_mask = layerstack.InsertPosition.inside_node(layer_node, layerstack.NodeStack.Mask)
+        my_paint_effect = layerstack.insert_paint(inside_mask)
+        layerstack.set_selected_nodes([my_paint_effect])
+
+
+    def mh_add_paint_mask_effect(self):
+        """Adds a paint effect to the mask of the currently selected layer or its parent layer if an effect is selected. Adds a black mask if none exists.
+        """
+        selected_layer = layerstack.get_selected_nodes(self.layer_manager.current_stack)
+        if not selected_layer:
+            logging.error("No layer selected.")
+            return
+        
+        selected_node = selected_layer[0]
+
+        try:
+            if not selected_node.has_mask():
+                # create mask and
+                # insert inside mask
+                self.add_mask(mask_bkg_color='Black')
+                insert_position = layerstack.InsertPosition.inside_node(selected_layer[0], layerstack.NodeStack.Mask)
+                my_paint_effect = layerstack.insert_paint(insert_position)
+                layerstack.set_selected_nodes([my_paint_effect])
+        except AttributeError:
+            # decide if user has a layer or effect selected
+            if selected_node.get_type() == layerstack.NodeType.PaintEffect:
+                # insert above effect
+                insert_position = layerstack.InsertPosition.above_node(selected_node)
+                my_paint_effect = layerstack.insert_paint(insert_position)
+                layerstack.set_selected_nodes([my_paint_effect])
+            else:
+                # insert inside mask
+                insert_position = layerstack.InsertPosition.inside_node(selected_node, layerstack.NodeStack.Mask)
+                my_paint_effect = layerstack.insert_paint(insert_position)
+                layerstack.set_selected_nodes([my_paint_effect])
+
+
+    def test_has_mask_attribute(self):
+        """Test if the selected layer has the has_mask attribute available.
+        Prints success message if AttributeError is caught when trying to access has_mask.
+        """
+        selected_layer = layerstack.get_selected_nodes(self.layer_manager.current_stack)
+        if not selected_layer:
+            logging.error("No layer selected.")
+            return
+        
+        selected_node = selected_layer[0]
+        
+        try:
+            selected_node.has_mask()
+            print(f"{type(selected_node).__name__} has has_mask attribute.")
+            print("Test Failed - has_mask attribute exists")
+        except AttributeError as e:
+            print(f"[Python] AttributeError: '{type(selected_node).__name__}' object has no attribute 'has_mask'")
+            print("Test Successful - no mask found")
+
+    

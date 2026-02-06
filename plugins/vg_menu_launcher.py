@@ -137,7 +137,20 @@ def help_insert_color_selection_effect():
         
     except Exception as e:
         print(e)
-    
+
+def print_nodetype_attributes():
+    """Print all attributes of the layerstack.NodeType Enum."""
+
+    print("--- Available NodeType Attributes ---")
+    # Iterate over the Enum members
+    for name, member in layerstack.NodeType.__members__.items():
+        print(f"{name}: {member.value}")
+
+    # Fallback: Print raw dir() if it's not a standard python Enum
+    print("\n--- Raw Attributes ---")
+    for attr in dir(layerstack.NodeType):
+        if not attr.startswith("__"):
+            print(attr)
 
 def run_mh_script_test():
     """Run the MH script test for inserting color selection effect"""
@@ -149,7 +162,17 @@ def run_mh_black_mask_color_select():
     layer_manager = vg_layerstack.LayerManager()
     mask_manager_mh = mh_scripts.MaskManager_mh(layer_manager)
     mask_manager_mh.mh_add_black_mask_with_color_select()
-    
+
+def run_mh_add_paint_mask_effect():
+    """Run MH add paint mask effect using MaskManager_mh"""
+    layer_manager = vg_layerstack.LayerManager()
+    mask_manager_mh = mh_scripts.MaskManager_mh(layer_manager)
+    mask_manager_mh.mh_add_paint_mask_effect()
+
+def run_test_has_mask_attribute():
+    layer_manager = vg_layerstack.LayerManager()
+    mask_manager_mh = mh_scripts.MaskManager_mh(layer_manager)
+    mask_manager_mh.test_has_mask_attribute()
     
 #################################################################
 
@@ -185,8 +208,12 @@ def create_menu():
         None,  # Separator
         ("Print Layerstack Attributes", print_layerstack_attributes, None),
         ("Help Insert Color Selection Effect", help_insert_color_selection_effect, None),
+        ("Print NodeType Attributes", print_nodetype_attributes, None),
         ("Run MH Script Test", run_mh_script_test, None),
         ("Run MH Black Mask Color Select", run_mh_black_mask_color_select, None),
+        ("Run MH Add Paint Mask Effect", run_mh_add_paint_mask_effect, None),
+        ("Run MH Test has_mask Attribute", run_test_has_mask_attribute, None),
+
         None,  # Separator
         ("Quick Bake", launch_quick_bake, "Ctrl+B"),
     ]
