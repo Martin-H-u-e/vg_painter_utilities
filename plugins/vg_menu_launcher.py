@@ -16,6 +16,8 @@ from PySide6 import QtWidgets, QtGui
 from PySide6.QtGui import QKeySequence
 import importlib
 
+import substance_painter
+
 from substance_painter import ui, logging, layerstack
 from vg_pt_utils import vg_baking, vg_export, vg_layerstack, vg_project_info, mh_scripts
 
@@ -138,6 +140,26 @@ def help_insert_color_selection_effect():
     except Exception as e:
         print(e)
 
+def help_layerstack_attributes_A():
+    attributes_to_check = [
+        "insert_color_selection_effect",
+        "InsertPosition",
+        "NodeStack",
+        "get_selection_type",
+        "get_selection_type",
+        "instantiate",
+        "levels",
+        "GeometryMaskType",
+        "ScaleMode",
+    ]
+    for attr in attributes_to_check:
+        try:
+            print(f"Help for layerstack.{attr}:")
+            help(getattr(layerstack, attr))
+            print("\n")
+        except AttributeError:
+            print(f"Attribute {attr} not found in layerstack.")
+
 def print_nodetype_attributes():
     """Print all attributes of the layerstack.NodeType Enum."""
 
@@ -151,6 +173,14 @@ def print_nodetype_attributes():
     for attr in dir(layerstack.NodeType):
         if not attr.startswith("__"):
             print(attr)
+
+def print_NodeType_attributes():
+    """Print all attributes of the layerstack.NodeType."""
+    print("--- Available NodeType Attributes ---")
+    for attr in dir(layerstack.NodeType):
+        if not attr.startswith("__"):
+            print(attr)
+            # [Python] AttributeError: type object '_substance_painter.layerstack.NodeType' has no attribute 'PaintLayerNode'. Did you mean: 'PaintLayer'?
 
 def run_mh_script_test():
     """Run the MH script test for inserting color selection effect"""
@@ -173,7 +203,152 @@ def run_test_has_mask_attribute():
     layer_manager = vg_layerstack.LayerManager()
     mask_manager_mh = mh_scripts.MaskManager_mh(layer_manager)
     mask_manager_mh.test_has_mask_attribute()
-    
+
+def run_insert_paint_layer_mask_dynamic():
+    layer_manager = vg_layerstack.LayerManager()
+    mask_manager_mh = mh_scripts.MaskManager_mh(layer_manager)
+    mask_manager_mh.insert_mask_effect_dynamic(effectType="Paint")
+
+def run_insert_fill_layer_mask_dynamic():
+    layer_manager = vg_layerstack.LayerManager()
+    mask_manager_mh = mh_scripts.MaskManager_mh(layer_manager)
+    mask_manager_mh.insert_mask_effect_dynamic(effectType="Fill")
+
+def run_insert_levels_layer_mask_dynamic():
+    layer_manager = vg_layerstack.LayerManager()
+    mask_manager_mh = mh_scripts.MaskManager_mh(layer_manager)
+    mask_manager_mh.insert_mask_effect_dynamic(effectType="Levels")
+
+def run_insert_color_selection_layer_mask_dynamic():
+    layer_manager = vg_layerstack.LayerManager()
+    mask_manager_mh = mh_scripts.MaskManager_mh(layer_manager)
+    mask_manager_mh.insert_mask_effect_dynamic(effectType="Color Selection")
+
+
+
+def print_enum_selection_type():
+    print("--- SelectionType Options ---")
+    for name, member in layerstack.SelectionType.__members__.items():
+        print(f"layerstack.SelectionType.{name}")
+
+    print("\n--- Function Signature ---")
+    help(layerstack.set_selection_type)
+
+def print_ui_modules():
+    print("--- Root Modules ---")
+    # Check if there is anything like 'display', 'view', 'viewport' in the main package
+    for item in dir(substance_painter):
+        if not item.startswith("__"):
+            print(item)
+
+    print("\n--- UI Module Attributes ---")
+    # Check if the UI module has viewport controls
+    for item in dir(ui):
+        print(item)
+
+def print_display_modules():
+    import substance_painter.display as display
+
+    print("--- Display Module Attributes ---")
+    # List everything in the display module
+    for item in dir(display):
+        if not item.startswith("__"):
+            print(item)
+
+    # Also check if there are any specific Enums inside it
+    if hasattr(display, 'ViewportSettings'): 
+        print("\n--- ViewportSettings ---")
+        print(dir(display.ViewportSettings))
+
+def find_veiwport_mode_code():
+    from PySide6.QtWidgets import QApplication
+
+    # Get the main application
+    app = QApplication.instance()
+
+    print("--- Searching for Mask Actions ---")
+    found_count = 0
+    visited_actions = set()
+
+    # Iterate over every widget in the UI
+    for widget in app.allWidgets():
+        for action in widget.actions():
+            # Clean up the text (remove accelerator keys like "&File")
+            name = action.text().replace("&", "")
+            
+            # We search for "Mask" but filter out common noise like "Add Mask"
+            # We are looking for "Show", "View", "Toggle", or just "Mask" in a View menu context
+            if "Mask" in name and action not in visited_actions:
+                visited_actions.add(action)
+                
+                # Print potentially relevant actions
+                # We filter out "Add" to reduce noise, focusing on View/Edit ops
+                if "Add" not in name and "Remove" not in name:
+                    print(f"Action: '{name}' | Parent: {type(widget).__name__} | Object: {action}")
+                    found_count += 1
+
+    print(f"\nTotal Candidates Found: {found_count}")
+        
+
+def search_for_channel_code():
+    from PySide6.QtWidgets import QApplication
+
+    app = QApplication.instance()
+    print("--- Searching for Channel/Display Actions ---")
+
+    found_count = 0
+    visited_actions = set()
+
+    for widget in app.allWidgets():
+        for action in widget.actions():
+            # Clean the name
+            text = action.text().replace("&", "")
+            
+            # Filter for the user's specific guess + broad keyword
+            if "Channel" in text or "Display" in text:
+                if action not in visited_actions:
+                    visited_actions.add(action)
+                    print(f"Action: '{text}' | Object: {action}")
+                    found_count += 1
+
+    print(f"\nTotal Found: {found_count}")
+
+def search_pick():
+    from PySide6.QtWidgets import QApplication
+    from PySide6.QtGui import QKeySequence
+
+    app = QApplication.instance()
+    print("--- Searching for 'Pick Material' Tool ---")
+
+    found_count = 0
+    visited_actions = set()
+
+    # Iterate all widgets
+    for widget in app.allWidgets():
+        for action in widget.actions():
+            # Clean the name
+            text = action.text().replace("&", "")
+            
+            # Get shortcuts (returns a list of QKeySequence)
+            shortcuts = action.shortcuts()
+            has_p_shortcut = any(seq.toString() == "P" for seq in shortcuts)
+            
+            # Search criteria:
+            # 1. Name contains "Pick" AND "Material"
+            # 2. OR the shortcut is exactly "P"
+            if ("Pick" in text and "Material" in text) or has_p_shortcut:
+                
+                if action not in visited_actions:
+                    visited_actions.add(action)
+                    
+                    # Print details
+                    shortcut_str = ", ".join([s.toString() for s in shortcuts])
+                    print(f"FOUND: '{text}' | Shortcut: [{shortcut_str}]")
+                    print(f"Object: {action}\n")
+                    found_count += 1
+
+    print(f"Total Candidates: {found_count}")
+
 #################################################################
 
 def create_menu():    
@@ -191,7 +366,7 @@ def create_menu():
         ("New Paint Layer", new_paint_layer, "Ctrl+P"),
         None,  # Separator
         ("New Fill Layer with Base Color", new_fill_layer_base, "Ctrl+F"),
-        ("New Fill Layer with Height", new_fill_layer_height, "Ctrl+Alt+F"),
+        # ("New Fill Layer with Height", new_fill_layer_height, "Ctrl+Alt+F"),
         ("New Fill Layer with All Channels", new_fill_layer_all, "Ctrl+Shift+F"),
         ("New Fill Layer, no channel", new_fill_layer_empty, None),
         None,  # Separator
@@ -213,6 +388,22 @@ def create_menu():
         ("Run MH Black Mask Color Select", run_mh_black_mask_color_select, None),
         ("Run MH Add Paint Mask Effect", run_mh_add_paint_mask_effect, None),
         ("Run MH Test has_mask Attribute", run_test_has_mask_attribute, None),
+        ("Run MH Help Layerstack Attributes A", help_layerstack_attributes_A, None),
+        ("Run MH Insert Paint Layer Mask Dynamic", run_insert_paint_layer_mask_dynamic, "Ctrl+Alt+D"),
+        ("Run MH Insert Fill Layer Mask Dynamic", run_insert_fill_layer_mask_dynamic, "Ctrl+Alt+F"),
+        ("Run MH Insert Levels Layer Mask Dynamic", run_insert_levels_layer_mask_dynamic, "Ctrl+Alt+V"),
+        ("Run MH Insert Color Selection Layer Mask Dynamic", run_insert_color_selection_layer_mask_dynamic, "Ctrl+Alt+C"),
+
+
+
+
+        ("Print NodeType Attributes (raw)", print_NodeType_attributes, None),
+        ("Print SelectionType Enum Options", print_enum_selection_type, None),
+        ("Print UI Modules", print_ui_modules, None),
+        ("Print Display Modules", print_display_modules, None),
+        ("Find Viewport Mode Code", find_veiwport_mode_code, None),
+        ("Search for Channel/Display Code", search_for_channel_code, None),
+        ("Search for 'Pick Material' Tool", search_pick, None),
 
         None,  # Separator
         ("Quick Bake", launch_quick_bake, "Ctrl+B"),

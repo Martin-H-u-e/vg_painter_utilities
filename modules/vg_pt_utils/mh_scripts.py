@@ -1,8 +1,10 @@
 # MH scripts
 # Modules Import
 
+from platform import node
 import string
 from substance_painter import textureset, layerstack, project, resource, logging, colormanagement
+
 
 """
 [Python] --- Raw Attributes of NodeType ---
@@ -10,48 +12,89 @@ from substance_painter import textureset, layerstack, project, resource, logging
 [Python] ColorSelectionEffect
 [Python] CompareMaskEffect
 [Python] FillEffect
+
 [Python] FillLayer
+
 [Python] FilterEffect
 [Python] GeneratorEffect
+
 [Python] GroupLayer
+
 [Python] InstanceLayer
+
 [Python] LevelsEffect
 [Python] PaintEffect
+
 [Python] PaintLayer
+
 [Python] name
 [Python] value
 """
 
+
 def mh_script_test():
+    # toggle_layer_mask_selection():
     try:
-        # 1. Get the Active Stack (The argument you were missing)
-        # Found in vg_layerstack.py Line 36/41f
+        # 1. Get the current layer
         stack = textureset.get_active_stack()
-        
-        # 2. Get the selected layer using the stack
         selection = layerstack.get_selected_nodes(stack)
         
         if not selection:
-            print("Error: No layer selected.")
+            print("No layer selected.")
+            return
+
+        current_layer = selection[0]
+
+        # 2. Get current state (Now passing the required layer argument)
+        current_type = layerstack.get_selection_type(current_layer)
+        
+        # 3. Define the correct Enums based on your discovery
+        MODE_CONTENT = layerstack.SelectionType.Content
+        MODE_MASK = layerstack.SelectionType.Mask 
+
+        # 4. The Toggle Logic
+        # Note: We must pass 'current_layer' to the setter as well
+        if current_type == MODE_CONTENT:
+            print(f"Switching {current_layer} to MASK...")
+            layerstack.set_selection_type(current_layer, MODE_MASK)
         else:
-            current_layer = selection[0]
-            print(f"Targeting: {current_layer}")
-
-            # 3. Create the Insertion Position
-            # We use the factory method '.inside_node' found in vg_layerstack.py Line 235
-            # We explicitly target the Mask stack.
-            position = layerstack.InsertPosition.inside_node(current_layer, layerstack.NodeStack.Mask)
-            
-            # 4. Insert the Color Selection Effect
-            my_color_selection_effect = layerstack.insert_color_selection_effect(position)
-            
-            print(f"SUCCESS! Created effect: {my_color_selection_effect}")
-
-            layerstack.set_selected_nodes([my_color_selection_effect])
+            print(f"Switching {current_layer} to CONTENT...")
+            layerstack.set_selection_type(current_layer, MODE_CONTENT)
 
     except Exception as e:
-        print(f"Script Error: {e}")
+        print(f"Error: {e}")
 
+def toggle_layer_mask_selection():
+    """Toggles the selection between layer content and mask for the currently selected layer."""
+    try:
+        # 1. Get the current layer
+        stack = textureset.get_active_stack()
+        selection = layerstack.get_selected_nodes(stack)
+        
+        if not selection:
+            print("No layer selected.")
+            return
+
+        current_layer = selection[0]
+
+        # 2. Get current state (Now passing the required layer argument)
+        current_type = layerstack.get_selection_type(current_layer)
+        
+        # 3. Define the correct Enums based on your discovery
+        MODE_CONTENT = layerstack.SelectionType.Content
+        MODE_MASK = layerstack.SelectionType.Mask 
+
+        # 4. The Toggle Logic
+        # Note: We must pass 'current_layer' to the setter as well
+        if current_type == MODE_CONTENT:
+            print(f"Switching {current_layer} to MASK...")
+            layerstack.set_selection_type(current_layer, MODE_MASK)
+        else:
+            print(f"Switching {current_layer} to CONTENT...")
+            layerstack.set_selection_type(current_layer, MODE_CONTENT)
+
+    except Exception as e:
+        print(f"Error: {e}")
 
 class MaskManager_mh:
 
@@ -179,4 +222,100 @@ class MaskManager_mh:
             print(f"[Python] AttributeError: '{type(selected_node).__name__}' object has no attribute 'has_mask'")
             print("Test Successful - no mask found")
 
-    
+    def insert_mask_effect_dynamic(self, effectType):
+        """
+        Dynamically adds a paint effect to the mask.
+        If no mask exists, it creates one with a black background and adds the paint effect inside it.
+        If currently an effect is selected, it adds the paint effect above it.
+        """
+
+        def _find_properties_button():
+            from PySide6.QtWidgets import QApplication, QPushButton, QWidget
+            app = QApplication.instance()
+            print("--- Scanning Properties Panel ---")
+            
+            # 1. Find the Properties Dock/Window
+            # We search all widgets for one that seems to be the properties panel
+            # usually by checking window titles or object names if available.
+            
+            candidates = []
+            
+            for widget in app.allWidgets():
+                # We look for a button with the specific text "Pick color"
+                # This text usually appears on the button inside the properties view
+                if isinstance(widget, QWidget):
+                    # Check text if it has it (PushButtons, ToolButtons, Labels)
+                    text = ""
+                    if hasattr(widget, "text"):
+                        text = widget.text()
+                    
+                    if "Pick color" in text:
+                        print(f"[FOUND] Widget: {widget} | Text: '{text}'")
+                        candidates.append(widget)
+
+            if not candidates:
+                print("No 'Pick color' button found. (Make sure the Color Selection node is selected!)")
+                return
+
+            # 2. Try to verify which one is the real button
+            print(f"\nFound {len(candidates)} candidate(s).")
+            
+            # We will try to click the first valid button found
+            # (Usually there is only one visible)
+            target_btn = candidates[0]
+            
+            print(f"Attempting to click: {target_btn}")
+            # We use animateClick() here as it's safer for standard buttons than setChecked
+            if hasattr(target_btn, "animateClick"):
+                target_btn.animateClick()
+                print(">> Click sent.")
+
+        def _insert_and_select_paint_effect_inside_mask(slected_node, effectType, above_inside="inside"):
+            if above_inside == "inside":
+                insert_position = layerstack.InsertPosition.inside_node(slected_node, layerstack.NodeStack.Mask)
+            if above_inside == "above":
+                insert_position = layerstack.InsertPosition.above_node(slected_node)
+            if effectType == "Paint":
+                my_mask_effect = layerstack.insert_paint(insert_position)
+            if effectType == "Fill":
+                my_mask_effect = layerstack.insert_fill(insert_position)
+                pure_white = colormanagement.Color(1.0, 1.0, 1.0)
+                my_mask_effect.set_source(channeltype=None, source=pure_white)
+            if effectType == "Color Selection":
+                my_mask_effect = layerstack.insert_color_selection_effect(insert_position)
+            if effectType == "Levels":
+                my_mask_effect = layerstack.insert_levels_effect(insert_position)
+
+            layerstack.set_selected_nodes([my_mask_effect])
+
+        selected_layer = layerstack.get_selected_nodes(self.layer_manager.current_stack)
+        if not selected_layer:
+            logging.error("No layer selected.")
+            return
+        
+        nodesTypes_able_to_have_masks = [
+            layerstack.NodeType.PaintLayer,
+            layerstack.NodeType.FillLayer,
+            layerstack.NodeType.GroupLayer,
+            layerstack.NodeType.InstanceLayer,
+        ]
+
+        #test check if selected node is in the list of types to add mask to
+        if selected_layer[0].get_type() not in nodesTypes_able_to_have_masks:
+            _insert_and_select_paint_effect_inside_mask(selected_layer[0], effectType=effectType, above_inside="above")
+        else:
+            try:
+                # create mask and
+                # insert inside mask
+                selected_layer[0].add_mask(layerstack.MaskBackground.Black)
+                _insert_and_select_paint_effect_inside_mask(selected_layer[0], effectType=effectType, above_inside="inside")
+            # except if [Python] ValueError: This node already has a mask
+            # only execute if this exact error is caught, otherwise print the error
+            except ValueError as e:
+                if str(e) == "This node already has a mask":
+                    # swtich to mask and insert paint
+                    toggle_layer_mask_selection()
+                    _insert_and_select_paint_effect_inside_mask(selected_layer[0], effectType=effectType, above_inside="inside")
+
+        if effectType == "Color Selection":
+            _find_properties_button()
